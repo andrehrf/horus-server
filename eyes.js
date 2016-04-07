@@ -25,8 +25,15 @@ var HorusEyes = {
             
     /**
      * Links list
+     * @type object
      */
     links: {},
+    
+    /**
+     * setTimeouts list
+     * @type object
+     */
+    times: {},
     
     /**
      * Start the big brother
@@ -54,7 +61,17 @@ var HorusEyes = {
     set: function(id, link){
         HorusEyes.links[id] = link;
         HorusEyes.watch(HorusEyes.links[id]);
-        setInterval(function(l){ HorusEyes.watch(l); }, (id/100)+60000, link);
+        HorusEyes.times[id] = setInterval(function(l){ HorusEyes.watch(l); }, (id/100)+60000, link);
+    },
+    
+    /**
+     * Delete link to watch
+     * @param integer id
+     * @return void
+     */
+    delete: function(id){
+        if(id in HorusEyes.times)
+            clearTimeout(HorusEyes.times[id]);
     },
     
     /**
@@ -198,6 +215,7 @@ process.on("message", function(data){
     switch(data.cmd){
         case "exit": process.exit(1); break;
         case "set": HorusEyes.set(data.id, data.link); break;
+        case "delete": HorusEyes.set(data.id); break;
         case "settings": 
             settings = data;
             

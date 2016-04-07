@@ -89,6 +89,7 @@ module.exports = function(dirname, settings, app, mongodb){
             mongodb.collection("links").remove({"_id": id}, function(err){
                 if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
                 else res.send(JSON.stringify({"status": "ok"}));
+                thread.send({"cmd": "delete", "id": id});
             });        
         }
         else{
