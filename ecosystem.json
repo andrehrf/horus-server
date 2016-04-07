@@ -1,0 +1,8 @@
+{
+  "apps" : [{
+    "script"    : "app.js",
+    "name"      : "horus",
+    "exec_mode" : "fork",
+    "node_args" : "--harmony --expose-gc --max-old-space-size=1024"
+  }]
+}
