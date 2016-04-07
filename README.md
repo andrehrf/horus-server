@@ -28,6 +28,5 @@ $ sudo npm install -g pm2
 
 ```bash
 $ npm install
-$ bower install
 $ pm2 start ecosystem.json
 ```
