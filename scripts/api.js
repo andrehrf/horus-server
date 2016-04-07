@@ -11,8 +11,6 @@ var fs = require("fs"),//File System
     cp = require('child_process'),
     url = require("url")
     md5 = require("md5"),//Usage to generate MD5 
-    request = require('request'),
-    php = require("phpjs"),
     crc32 = require("crc-32");//Usage to generate CRC32 to string
     
 module.exports = function(dirname, settings, app, mongodb){  
@@ -38,47 +36,63 @@ module.exports = function(dirname, settings, app, mongodb){
     //Routes
     app.get("/", function(req, res){
        var link = req.query.link; 
-       var id = Math.abs(crc32.str(md5(link)));
        
-       mongodb.collection("links").find({"_id": id}, {lastmodified: 1, lastwatch: 1, etag: 1}).limit(1).toArray(function(err, docs){
-           if(err){ 
-               res.send(JSON.stringify({"status": "error", "msg": err}));
-           }
-           else{
-               var lastModified = new Date(docs[0]["lastmodified"]);
-               res.setHeader("Last-Modified", lastModified.toGMTString());
-               res.send(JSON.stringify({"status": "ok", "lastmodified": docs[0]["lastmodified"], "lastwatch": docs[0]["lastwatch"], "etag": docs[0]["etag"]}));
-           }
-       }); 
+        if(typeof link === "string"){
+            var id = Math.abs(crc32.str(md5(link)));
+
+            mongodb.collection("links").find({"_id": id}, {lastmodified: 1, lastwatch: 1, etag: 1}).limit(1).toArray(function(err, docs){
+                if(err){ 
+                    res.send(JSON.stringify({"status": "error", "msg": err}));
+                }
+                else{
+                    var lastModified = new Date(docs[0]["lastmodified"]);
+                    res.setHeader("Last-Modified", lastModified.toGMTString());
+                    res.send(JSON.stringify({"status": "ok", "lastmodified": docs[0]["lastmodified"], "lastwatch": docs[0]["lastwatch"], "etag": docs[0]["etag"]}));
+                }
+            }); 
+        }
+        else{
+            res.send(JSON.stringify({"status": "error", "msg": "Invalid link"}));
+        }
     });
     
     app.post("/set", function(req, res){
         var now = new Date().getTime();
         bulk = mongodb.collection("links").initializeUnorderedBulkOp();
         
-        for(var key in req.body){
-            var id = Math.abs(crc32.str(md5(req.body[key])));
-            bulk.find({_id: id}).upsert().update({$set: {link: req.body[key], datetime: now}});
-            thread.send({"cmd": "set", "id": id, "link": req.body[key]});
-        }
-        
-        if(bulk.s.currentIndex > 0){
-            bulk.execute(function(err, result) { 
-                if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
-                else res.send(JSON.stringify({"status": "ok"}));
-            });
+        if(req.body.length > 0){
+            for(var key in req.body){
+                var id = Math.abs(crc32.str(md5(req.body[key])));
+                bulk.find({_id: id}).upsert().update({$set: {link: req.body[key], datetime: now}});
+                thread.send({"cmd": "set", "id": id, "link": req.body[key]});
+            }
+
+            if(bulk.s.currentIndex > 0){
+                bulk.execute(function(err, result) { 
+                    if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
+                    else res.send(JSON.stringify({"status": "ok"}));
+                });
+            }
+            else{
+                res.send(JSON.stringify({"status": "error", "msg": "No records to insert"}));
+            }
         }
         else{
-            res.send(JSON.stringify({"status": "error"}));
+            res.send(JSON.stringify({"status": "error", "msg": "No records to insert"}));
         }
     });
         
     app.delete("/delete/:id", function(req, res){
         var id = parseInt(req.params.id);
-        
-        mongodb.collection("links").remove({"_id": id}, function(err){
-            if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
-            else res.send(JSON.stringify({"status": "ok"}));
-        });        
+           
+        if(id > 0){
+            mongodb.collection("links").remove({"_id": id}, function(err){
+                if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
+                else res.send(JSON.stringify({"status": "ok"}));
+            });        
+        }
+        else{
+            res.send(JSON.stringify({"status": "error", "msg": "Invalid ID"}));
+        }
     });
 };

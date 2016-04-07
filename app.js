@@ -9,7 +9,6 @@ var fs = require("fs"),//File System
     argv = require('optimist').argv,//Usage to parte console params
     requireDirectory = require('require-directory'),//Usage to require all files in directory
     cluster = require("cluster"),//Usage Cluster of Node.js
-    uuid = require("uuid"),//Usage do generate unique ID
     express = require("express"),//Starting Express  
     app = express(),//Creating Application
     http = require("http"),//Creating HTTP Server

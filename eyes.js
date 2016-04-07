@@ -9,8 +9,6 @@ var fs = require("fs"),
     crc32 = require("crc-32"),
     md5 = require("md5"),
     MongoServer = require("mongodb").MongoClient,
-    request = require('superagent'),
-    php = require("phpjs"),
     _ = require("lodash"),
     async = require("async"),
     url = require("url"),
@@ -55,6 +53,7 @@ var HorusEyes = {
      */
     set: function(id, link){
         HorusEyes.links[id] = link;
+        HorusEyes.watch(HorusEyes.links[id]);
         setInterval(function(l){ HorusEyes.watch(l); }, (id/100)+60000, link);
     },
     
@@ -87,7 +86,7 @@ var HorusEyes = {
                 }
             };
             
-            if(docs[0]["lastmodified"] > 0)
+            if(typeof docs[0]["lastmodified"] === "number")
                 options.headers["If-Modified-Since"] = new Date(parseInt(docs[0]["lastmodified"])).toGMTString();
                                     
             var req = protocol.request(options, function(res) {
@@ -97,7 +96,9 @@ var HorusEyes = {
                         var lastModifiedString = res.headers["last-modified"];
                         var lastModified = new Date(lastModifiedString).getTime();
                         var cacheETAG = ("etag" in res.headers) ? res.headers["etag"] : null;
-                        cacheETAG = cacheETAG.replace(/\"/g, "");
+                        
+                        if(typeof cacheETAG === "string")
+                            cacheETAG = cacheETAG.replace(/\"/g, "");
                         
                         if(docs[0]["lastmodified"] > 0){
                             if(lastModified > docs[0]["lastmodified"]){
@@ -133,11 +134,15 @@ var HorusEyes = {
                         var reqGet = protocol.request(optionsGet, function(resGet){
                             var tmpBuffer = "";
                             
+                            res.on('error', function(error) {
+                                console.log(error);
+                            });
+                            
                             res.on('data', function(chunk) {
                                 tmpBuffer += chunk;
                             });
                             
-                            res.on('end', function() {
+                            res.on('end', function(chunk) {                                
                                 if(resGet.statusCode === 200){
                                     var eTag = md5(tmpBuffer);
                                                                         
@@ -164,9 +169,12 @@ var HorusEyes = {
                                     console.log(id+" Request error");
                                     HorusEyes.db.collection("links").update({"_id": id}, {$set: {invalid: true, code: res.statusCode, lastwatch: now.getTime()}});
                                 }
+                                
+                                global.gc();
                             });
                         });
                         
+                        reqGet.setTimeout(15000);
                         reqGet.end();
                     }                   
                 }
@@ -180,10 +188,9 @@ var HorusEyes = {
                 }
             });
 
+            req.setTimeout(3000);
             req.end();
-        })
-        
-        
+        });        
     }
 };
 
