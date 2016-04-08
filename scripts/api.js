@@ -70,8 +70,8 @@ module.exports = function(dirname, settings, app, mongodb){
     app.post("/set", function(req, res){
         var now = new Date().getTime();
         bulk = mongodb.collection("links").initializeUnorderedBulkOp();
-        
-        if(req.body.length > 0){
+                
+        //if(req.body.length > 0){
             for(var key in req.body){
                 var id = Math.abs(crc32.str(md5(req.body[key])));
                 bulk.find({_id: id}).upsert().update({$set: {link: req.body[key], datetime: now}});
@@ -87,10 +87,10 @@ module.exports = function(dirname, settings, app, mongodb){
             else{
                 res.status(400).send(JSON.stringify({"status": "error", "msg": "No records to insert", "code": 400}));
             }
-        }
+        /*}
         else{
             res.status(400).send(JSON.stringify({"status": "error", "msg": "No records to insert", "code": 400}));
-        }
+        }*/
     });
         
     app.delete("/delete/:id", function(req, res){
