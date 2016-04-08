@@ -1,6 +1,6 @@
 <div align="center">
     <img width=710px src="http://i1.wp.com/nodedecode.com.br/wp-content/uploads/2016/04/horus_logo.jpg?resize=750%2C410">
-<br/>
+</div>
 
 Horus is a monitoring system in real-time changes to pages
 
