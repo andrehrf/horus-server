@@ -1,8 +1,7 @@
 <div align="center">
     <img width=710px src="http://i1.wp.com/nodedecode.com.br/wp-content/uploads/2016/04/horus_logo.jpg?resize=750%2C410">
+    Horus is a monitoring system in real-time changes to pages
 </div>
-
-Horus is a monitoring system in real-time changes to pages
 
 ## Install Node.js
 
@@ -20,6 +19,14 @@ $ sudo apt-get update
 $ sudo apt-get install -y mongodb-org
 ```
 
+## Install Horus Server
+
+```bash
+$ git clone https://github.com/andrehrf/horus-server
+$ cd /horus-server
+$ npm install
+```
+
 ## Outer installations
 
 ```bash
@@ -29,8 +36,45 @@ $ sudo npm install -g pm2
 ## Start Horus server
 
 ```bash
-$ npm install
 $ pm2 start ecosystem.json
+```
+
+or
+
+```bash
+$ node app.js
+```
+
+## Usage Horus
+
+```js
+var Horus = require("./index.js");
+var horus = new Horus("http://localhost:9007");
+
+//Set links to watch
+horus.set([
+    "https://pt.wikipedia.org/wiki/Wikip%C3%A9dia:P%C3%A1gina_principal",
+    "https://pt.wikipedia.org/wiki/Brasil"
+], function(err){
+    if(err)
+        console.log(err);
+    else
+        console.log("Set OK");
+});
+
+//Get link status
+horus.get("https://pt.wikipedia.org/wiki/Brasil", function(err, info){
+    if(err)
+        console.log(err);
+    else
+        console.log(info);
+});
+
+//Delete link
+horus.delete("https://pt.wikipedia.org/wiki/Wikip%C3%A9dia:P%C3%A1gina_principal", function(err){
+    if(err)
+        console.log(err);
+});
 ```
 
 ### License
