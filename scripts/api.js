@@ -33,7 +33,6 @@ module.exports = function(dirname, settings, app, mongodb){
         thread = cp.fork(pathname, null, {silent: false});
     });
     
-    //Routes
     app.get("/", function(req, res){
        var link = req.query.link; 
        
@@ -42,17 +41,29 @@ module.exports = function(dirname, settings, app, mongodb){
 
             mongodb.collection("links").find({"_id": id}, {lastmodified: 1, lastwatch: 1, etag: 1}).limit(1).toArray(function(err, docs){
                 if(err){ 
-                    res.send(JSON.stringify({"status": "error", "msg": err}));
+                    res.status(400).send(JSON.stringify({"status": "error", "msg": err, "code": 400}));
                 }
                 else{
-                    var lastModified = new Date(docs[0]["lastmodified"]);
-                    res.setHeader("Last-Modified", lastModified.toGMTString());
-                    res.send(JSON.stringify({"status": "ok", "lastmodified": docs[0]["lastmodified"], "lastwatch": docs[0]["lastwatch"], "etag": docs[0]["etag"]}));
+                    if(docs.length > 0){
+                        if("lastmodified" in docs[0]){
+                            var lastModified = new Date(docs[0]["lastmodified"]);
+                            res.setHeader("Last-Modified", lastModified.toGMTString());
+                        }
+                        else{
+                            var lastModified = new Date();
+                            res.setHeader("Last-Modified", lastModified.toGMTString());
+                        }
+
+                        res.send(JSON.stringify({"status": "ok", "lastmodified": docs[0]["lastmodified"], "lastwatch": docs[0]["lastwatch"], "etag": docs[0]["etag"]}));
+                    }
+                    else{
+                        res.status(404).send(JSON.stringify({"status": "error", "msg": "Could not find the link in the database", "code": 404}));
+                    }
                 }
             }); 
         }
         else{
-            res.send(JSON.stringify({"status": "error", "msg": "Invalid link"}));
+            res.status(400).send(JSON.stringify({"status": "error", "msg": "Invalid link", "code": 400}));
         }
     });
     
@@ -69,16 +80,16 @@ module.exports = function(dirname, settings, app, mongodb){
 
             if(bulk.s.currentIndex > 0){
                 bulk.execute(function(err, result) { 
-                    if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
-                    else res.send(JSON.stringify({"status": "ok"}));
+                    if(err) res.status(400).send(JSON.stringify({"status": "error", "msg": err, "code": 400}));
+                    else res.send(JSON.stringify({"status": "ok", "code": 200}));
                 });
             }
             else{
-                res.send(JSON.stringify({"status": "error", "msg": "No records to insert"}));
+                res.status(400).send(JSON.stringify({"status": "error", "msg": "No records to insert", "code": 400}));
             }
         }
         else{
-            res.send(JSON.stringify({"status": "error", "msg": "No records to insert"}));
+            res.status(400).send(JSON.stringify({"status": "error", "msg": "No records to insert", "code": 400}));
         }
     });
         
@@ -87,13 +98,13 @@ module.exports = function(dirname, settings, app, mongodb){
            
         if(id > 0){
             mongodb.collection("links").remove({"_id": id}, function(err){
-                if(err) res.send(JSON.stringify({"status": "error", "msg": err}));
-                else res.send(JSON.stringify({"status": "ok"}));
+                if(err) res.status(400).send(JSON.stringify({"status": "error", "msg": err, "code": 400}));
+                else res.send(JSON.stringify({"status": "ok", "code": 200}));
                 thread.send({"cmd": "delete", "id": id});
             });        
         }
         else{
-            res.send(JSON.stringify({"status": "error", "msg": "Invalid ID"}));
+            res.status(400).send(JSON.stringify({"status": "error", "msg": "Invalid ID", "code": 400}));
         }
     });
 };
