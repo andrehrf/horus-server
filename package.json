@@ -1,6 +1,6 @@
 {
     "name": "horus-server",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Horus is a monitoring system in real-time changes to pages",
     "author": "André Ferreira <andrehrf@gmail.com>",
     "dependencies": {
